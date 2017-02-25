@@ -1,20 +1,25 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
-	"github.com/labstack/echo"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"time"
+
 	"github.com/koron/go-dproxy"
-	"encoding/json"
+	"github.com/labstack/echo"
+	"gopkg.in/yaml.v2"
 )
 
 const layout = "2006-01-02"
 
 type Res struct {
+	Items []Item `json:"items"`
+}
+
+type Item struct {
 	Title string `json:"title"`
 	Url   string `json:"url"`
 }
@@ -25,28 +30,24 @@ func GetAllNews() echo.HandlerFunc {
 		if err != nil {
 			return err
 		}
-		return c.String(http.StatusOK, parseResJson(reses))
+		println(len(reses))
+		return c.String(http.StatusOK, parseResJson(Res{Items:reses}))
 	}
 }
 
-func parseResJson(reses []Res) string {
-	//var j string
-	//for _, v := range reses {
-	//	resJ, _ := json.Marshal(v)
-	//	j += string(resJ)
-	//}
-	j, _ := json.Marshal(reses)
+func parseResJson(res Res) string {
+	j, _ := json.Marshal(res)
 	return string(j)
 }
 
-func gitHubClient(lang string) ([]Res, error) {
+func gitHubClient(lang string) ([]Item, error) {
 	url, err := ReadUrl("GitHub")
 	if err != nil {
 		return nil, err
 	}
 
 	qMap := make(map[string]string, 0)
-	yesterday := time.Now().AddDate(0, 0, -1)
+	yesterday := time.Now().AddDate(0, 0, -2)
 	qMap["q"] = "language:" + lang + "+pushed:>" + yesterday.Format(layout)
 	qMap["sort"] = "starts"
 	qMap["order"] = "desc"
@@ -73,10 +74,10 @@ func gitHubClient(lang string) ([]Res, error) {
 	json.Unmarshal(body, &v)
 
 	items, _ := dproxy.New(v).M("items").Array()
-	var reses = make([]Res, 0)
+	var reses = make([]Item, 0)
 	for _, item := range items {
 		con := dproxy.New(item)
-		var res Res
+		var res Item
 		res.Title, _ = con.M("description").String()
 		res.Url, _ = con.M("html_url").String()
 		reses = append(reses, res)
