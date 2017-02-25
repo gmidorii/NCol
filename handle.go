@@ -7,7 +7,10 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"time"
 )
+
+const layout = "2006-01-02"
 
 func GetAllNews() echo.HandlerFunc {
 	return func(c echo.Context) error {
@@ -15,7 +18,31 @@ func GetAllNews() echo.HandlerFunc {
 		if err != nil {
 			return err
 		}
-		return c.String(http.StatusOK, url)
+
+		qMap := make(map[string]string, 0)
+		yesterday := time.Now().AddDate(0, 0, -1)
+		qMap["q"] = "language:" + c.QueryParam("lang") + "+pushed:>" + yesterday.Format(layout)
+		qMap["sort"] = "starts"
+		qMap["order"] = "desc"
+		for k, v := range qMap {
+			url += k + "=" + v + "&"
+		}
+
+		client := http.Client{}
+		req, err := http.NewRequest("GET", url, nil)
+		res, err := client.Do(req)
+		if err != nil {
+			return err
+		}
+		if res.StatusCode != http.StatusOK {
+			return c.String(res.StatusCode, "Api connecting was failed")
+		}
+		body, err := ioutil.ReadAll(res.Body)
+		if  err != nil {
+			return err
+		}
+
+		return c.String(http.StatusOK, string(body))
 	}
 }
 
