@@ -4,3 +4,5 @@ import:
   version: ^3.0.3
   subpackages:
   - middleware
+- package: github.com/koron/go-dproxy
+- package: gopkg.in/yaml.v2
