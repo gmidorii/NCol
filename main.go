@@ -5,6 +5,13 @@ import (
 	"github.com/labstack/echo/middleware"
 )
 
+const config = "config.yaml"
+
+type Url struct {
+	Name string
+	Url  string
+}
+
 func main() {
 	e := echo.New()
 
