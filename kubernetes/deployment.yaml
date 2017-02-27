@@ -6,6 +6,8 @@ metadata:
     app: ncol
 spec:
   replicas: 3
+  strategy:
+    type: RollingUpdate
   template:
     metadata:
       labels:
@@ -17,4 +19,4 @@ spec:
         imagePullPolicy: Always
         ports:
         - name: http-server
-          containerPort: 8080
+          containerPort: 1323
