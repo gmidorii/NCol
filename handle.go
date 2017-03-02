@@ -8,12 +8,16 @@ import (
 	"os"
 	"time"
 
+	"database/sql"
+
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/koron/go-dproxy"
 	"github.com/labstack/echo"
 	"gopkg.in/yaml.v2"
 )
 
 const layout = "2006-01-02"
+const dbLayout = "2006-01-02 15:04:05"
 
 type Res struct {
 	Items []Item `json:"items"`
@@ -31,8 +35,39 @@ func GetAllNews() echo.HandlerFunc {
 			return err
 		}
 		println(len(reses))
-		return c.String(http.StatusOK, parseResJson(Res{Items:reses}))
+		if err = insertDb(reses); err != nil {
+			return err
+		}
+		return c.String(http.StatusOK, parseResJson(Res{Items: reses}))
 	}
+}
+
+func insertDb(reses []Item) error {
+	db, err := sql.Open("mysql", "root:asdfghjkl@tcp(localhost:3306)/ncol?charset=utf8")
+	if err != nil {
+		println("db")
+		return err
+	}
+	defer db.Close()
+
+	stmt, err := db.Prepare("INSERT ncol.t_news SET name=?,url=?,inserted_date=?")
+	if err != nil {
+		println(err.Error())
+		return err
+	}
+	defer stmt.Close()
+
+	t := time.Now()
+	for _, v := range reses {
+		println(v.Title)
+		_, err := stmt.Exec(v.Title, v.Url, t.Format(dbLayout))
+		if err != nil {
+			println(err.Error())
+			return err
+		}
+	}
+
+	return nil
 }
 
 func parseResJson(res Res) string {
@@ -78,7 +113,7 @@ func gitHubClient(lang string) ([]Item, error) {
 	for _, item := range items {
 		con := dproxy.New(item)
 		var res Item
-		res.Title, _ = con.M("description").String()
+		res.Title, _ = con.M("full_name").String()
 		res.Url, _ = con.M("html_url").String()
 		reses = append(reses, res)
 	}

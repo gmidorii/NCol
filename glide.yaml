@@ -6,3 +6,4 @@ import:
   - middleware
 - package: github.com/koron/go-dproxy
 - package: gopkg.in/yaml.v2
+- package: github.com/go-sql-driver/mysql
