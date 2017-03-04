@@ -31,24 +31,59 @@ type Item struct {
 
 func GetAllNews() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		urls, err := ReadUrls("GitHubTrend")
+		items, err := selectItems()
 		if err != nil {
 			return err
 		}
-		items := make([]Item, 0)
-		for _, url := range urls {
-			itemList, err := gitHubClient(url)
+		println(len(items))
+		if len(items) == 0 {
+			urls, err := ReadUrls("GitHubTrend")
 			if err != nil {
 				return err
 			}
-			items = append(items, itemList...)
+			for _, url := range urls {
+				itemList, err := gitHubClient(url)
+				if err != nil {
+					return err
+				}
+				items = append(items, itemList...)
+			}
+			if err = insertDb(items); err != nil {
+				return err
+			}
 		}
 		println(len(items))
-		if err = insertDb(items); err != nil {
-			return err
-		}
 		return c.String(http.StatusOK, parseResJson(Res{Items: items}))
 	}
+}
+
+func selectItems() ([]Item, error) {
+	db, err := sql.Open("mysql", "root:asdfghjkl@tcp(localhost:3306)/ncol?charset=utf8")
+	if err != nil {
+		return nil, err
+	}
+	defer db.Close()
+
+	stmt, err := db.Prepare("SELECT name, url FROM t_news WHERE inserted_date LIKE ?")
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
+
+	res, err := stmt.Query(time.Now().Format(layout) + "%")
+	if err != nil {
+		return nil, err
+	}
+
+	items := make([]Item, 0)
+	for res.Next() {
+		var item Item
+		if err := res.Scan(&item.Title, &item.Url); err != nil {
+			return nil, err
+		}
+		items = append(items, item)
+	}
+	return items, nil
 }
 
 func insertDb(reses []Item) error {
@@ -68,7 +103,6 @@ func insertDb(reses []Item) error {
 
 	t := time.Now()
 	for _, v := range reses {
-		println(v.Title)
 		_, err := stmt.Exec(v.Title, v.Url, t.Format(dbLayout))
 		if err != nil {
 			println(err.Error())
@@ -89,6 +123,7 @@ func gitHubClient(url string) ([]Item, error) {
 	client := http.Client{}
 	req, err := http.NewRequest("GET", fmt.Sprintf(url, week.Format(layout)), nil)
 	fmt.Printf(url, week.Format(layout))
+	println()
 
 	res, err := client.Do(req)
 	if err != nil {
