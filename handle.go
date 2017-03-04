@@ -31,7 +31,7 @@ type Item struct {
 
 func GetAllNews() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		urls, err := ReadUrl("GitHubTrend")
+		urls, err := ReadUrls("GitHubTrend")
 		if err != nil {
 			return err
 		}
@@ -118,7 +118,7 @@ func gitHubClient(url string) ([]Item, error) {
 	return reses, nil
 }
 
-func ReadUrl(name string) ([]string, error) {
+func ReadUrls(name string) ([]string, error) {
 	c, err := os.Open(config)
 	if err != nil {
 		return nil, err
