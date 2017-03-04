@@ -9,7 +9,7 @@ const config = "config.yaml"
 
 type Url struct {
 	Name string
-	Url  string
+	Urls  []string
 }
 
 func main() {

@@ -10,6 +10,7 @@ import (
 
 	"database/sql"
 
+	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/koron/go-dproxy"
 	"github.com/labstack/echo"
@@ -30,15 +31,23 @@ type Item struct {
 
 func GetAllNews() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		reses, err := gitHubClient(c.QueryParam("lang"))
+		urls, err := ReadUrl("GitHubTrend")
 		if err != nil {
 			return err
 		}
-		println(len(reses))
-		if err = insertDb(reses); err != nil {
+		items := make([]Item, 0)
+		for _, url := range urls {
+			itemList, err := gitHubClient(url)
+			if err != nil {
+				return err
+			}
+			items = append(items, itemList...)
+		}
+		println(len(items))
+		if err = insertDb(items); err != nil {
 			return err
 		}
-		return c.String(http.StatusOK, parseResJson(Res{Items: reses}))
+		return c.String(http.StatusOK, parseResJson(Res{Items: items}))
 	}
 }
 
@@ -75,24 +84,12 @@ func parseResJson(res Res) string {
 	return string(j)
 }
 
-func gitHubClient(lang string) ([]Item, error) {
-	url, err := ReadUrl("GitHub")
-	if err != nil {
-		return nil, err
-	}
-
-	qMap := make(map[string]string, 0)
-	yesterday := time.Now().AddDate(0, 0, -2)
-	qMap["q"] = "language:" + lang + "+pushed:>" + yesterday.Format(layout)
-	qMap["sort"] = "starts"
-	qMap["order"] = "desc"
-	for k, v := range qMap {
-		url += k + "=" + v + "&"
-	}
-	println(url)
-
+func gitHubClient(url string) ([]Item, error) {
+	week := time.Now().AddDate(0, 0, -7)
 	client := http.Client{}
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf(url, week.Format(layout)), nil)
+	fmt.Printf(url, week.Format(layout))
+
 	res, err := client.Do(req)
 	if err != nil {
 		return nil, err
@@ -121,27 +118,27 @@ func gitHubClient(lang string) ([]Item, error) {
 	return reses, nil
 }
 
-func ReadUrl(url string) (string, error) {
+func ReadUrl(name string) ([]string, error) {
 	c, err := os.Open(config)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	defer c.Close()
 
 	file, err := ioutil.ReadAll(c)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	var urls []Url
 	err = yaml.Unmarshal(file, &urls)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	for _, v := range urls {
-		if url == v.Name {
-			return v.Url, nil
+		if name == v.Name {
+			return v.Urls, nil
 		}
 	}
-	return "", errors.New("Param name url is not found")
+	return nil, errors.New("Param name name is not found")
 }
