@@ -5,7 +5,7 @@ import (
 	"github.com/labstack/echo/middleware"
 )
 
-const config = "config.yaml"
+const urls = "urls.yaml"
 
 type Url struct {
 	Name string
