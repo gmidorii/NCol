@@ -37,7 +37,7 @@ func GetAllNews() echo.HandlerFunc {
 		}
 		println(len(items))
 		if len(items) == 0 {
-			urls, err := ReadUrls("GitHubTrend")
+			urls, err := readUrls("GitHubTrend")
 			if err != nil {
 				return err
 			}
@@ -153,8 +153,8 @@ func gitHubClient(url string) ([]Item, error) {
 	return reses, nil
 }
 
-func ReadUrls(name string) ([]string, error) {
-	c, err := os.Open(config)
+func readUrls(name string) ([]string, error) {
+	c, err := os.Open(urls)
 	if err != nil {
 		return nil, err
 	}
