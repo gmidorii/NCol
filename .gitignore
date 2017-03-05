@@ -90,3 +90,6 @@ Temporary Items
 
 # go-gin
 gin-bin
+
+# config file
+config.toml
