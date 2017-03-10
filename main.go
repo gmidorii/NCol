@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+
 	"github.com/BurntSushi/toml"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
@@ -16,6 +17,7 @@ var env Config
 type Configs struct {
 	Settings []Config
 }
+
 type Config struct {
 	Tag    string
 	Newsdb string
@@ -49,11 +51,8 @@ func main() {
 	}
 
 	e := echo.New()
-
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
-
-	e.GET("/news", GetAllNews())
-
+	e.GET("/news", getAllNews())
 	e.Logger.Fatal(e.Start(":1323"))
 }

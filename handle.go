@@ -29,7 +29,7 @@ type Item struct {
 	Url   string `json:"url"`
 }
 
-func GetAllNews() echo.HandlerFunc {
+func getAllNews() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		items, err := selectItems()
 		if err != nil {
@@ -58,7 +58,7 @@ func GetAllNews() echo.HandlerFunc {
 }
 
 func selectItems() ([]Item, error) {
-	db, err := sql.Open("mysql", "root:asdfghjkl@tcp(localhost:3306)/ncol?charset=utf8")
+	db, err := sql.Open("mysql", env.User + ":" + env.Pass + env.Newsdb);
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +87,7 @@ func selectItems() ([]Item, error) {
 }
 
 func insertDb(reses []Item) error {
-	db, err := sql.Open("mysql", "root:asdfghjkl@tcp(localhost:3306)/ncol?charset=utf8")
+	db, err := sql.Open("mysql", env.User + ":" + env.Pass + env.Newsdb);
 	if err != nil {
 		println("db")
 		return err
